@@ -19,6 +19,9 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 // Call represents an expected call to a mock.
@@ -301,8 +304,8 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-					c.origin, strconv.Itoa(i), args[i], m)
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+					c.origin, strconv.Itoa(i), diff(args[i], m))
 			}
 		}
 	} else {
@@ -323,8 +326,8 @@ func (c *Call) matches(args []interface{}) error {
 			if i < c.methodType.NumIn()-1 {
 				// Non-variadic args
 				if !m.Matches(args[i]) {
-					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-						c.origin, strconv.Itoa(i), args[i], m)
+					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+						c.origin, strconv.Itoa(i), diff(args[i], m))
 				}
 				continue
 			}
@@ -417,4 +420,71 @@ func setSlice(arg interface{}, v reflect.Value) {
 
 func (c *Call) addAction(action func([]interface{}) []interface{}) {
 	c.actions = append(c.actions, action)
+}
+
+var spewConfig = spew.ConfigState{
+	Indent:                  " ",
+	DisablePointerAddresses: true,
+	DisableCapacities:       true,
+	SortKeys:                true,
+}
+
+// diff returns a diff of both values as long as both are of the same type and
+// are a struct, map, slice, array or string. Otherwise it tries its best to return something useful
+func diff(actualOrig interface{}, matcher Matcher) string {
+	var actual interface{}
+	var expected interface{}
+	if diffable, ok := matcher.(DiffableMatcher); ok {
+		expected = diffable.Value()
+		actual = actualOrig
+	} else {
+		expected = matcher.String() // keep the types the same
+		actual = fmt.Sprintf("%s", actualOrig)
+	}
+	if expected == nil || actual == nil {
+		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
+	}
+
+	et, ek := typeAndKind(expected)
+	at, _ := typeAndKind(actual)
+
+	if et != at {
+		return fmt.Sprintf("Incorrect types. Got: %v Want: %v", at, et)
+	}
+
+	if ek != reflect.Struct && ek != reflect.Map && ek != reflect.Slice && ek != reflect.Array && ek != reflect.String {
+		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
+	}
+
+	var e, a string
+	if et != reflect.TypeOf("") {
+		e = spewConfig.Sdump(expected)
+		a = spewConfig.Sdump(actual)
+	} else {
+		e = reflect.ValueOf(expected).String()
+		a = reflect.ValueOf(actual).String()
+	}
+
+	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(a),
+		B:        difflib.SplitLines(e),
+		FromFile: "Got",
+		FromDate: "",
+		ToFile:   "Want",
+		ToDate:   "",
+		Context:  1,
+	})
+
+	return "Diff:\n" + diff
+}
+
+func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
+	t := reflect.TypeOf(v)
+	k := t.Kind()
+
+	if k == reflect.Ptr {
+		t = t.Elem()
+		k = t.Kind()
+	}
+	return t, k
 }
