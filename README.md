@@ -12,8 +12,8 @@ Installation
 Once you have [installed Go][golang-install], run these commands
 to install the `gomock` package and the `mockgen` tool:
 
-    go get github.com/fishybell/mock/gomock
-    go install github.com/fishybell/mock/mockgen
+    go get github.com/golang/mock/gomock
+    go install github.com/golang/mock/mockgen
 
 
 Documentation
@@ -21,7 +21,7 @@ Documentation
 
 After installing, you can use `go doc` to get documentation:
 
-    go doc github.com/fishybell/mock/gomock
+    go doc github.com/golang/mock/gomock
 
 Alternatively, there is an online reference for the package hosted on GoPkgDoc
 [here][gomock-ref].
@@ -163,8 +163,8 @@ func TestFoo(t *testing.T) {
 
 [golang]:          http://golang.org/
 [golang-install]:  http://golang.org/doc/install.html#releases
-[gomock-ref]:      http://godoc.org/github.com/fishybell/mock/gomock
-[travis-ci-badge]: https://travis-ci.org/fishybell/mock.svg?branch=master
-[travis-ci]:       https://travis-ci.org/fishybell/mock
-[godoc-badge]:     https://godoc.org/github.com/fishybell/mock/gomock?status.svg
-[godoc]:           https://godoc.org/github.com/fishybell/mock/gomock
+[gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock
+[travis-ci-badge]: https://travis-ci.org/golang/mock.svg?branch=master
+[travis-ci]:       https://travis-ci.org/golang/mock
+[godoc-badge]:     https://godoc.org/github.com/golang/mock/gomock?status.svg
+[godoc]:           https://godoc.org/github.com/golang/mock/gomock

@@ -5,8 +5,8 @@
 package mock_source
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
-	definition "github.com/fishybell/mock/mockgen/internal/tests/import_source/definition"
+	gomock "github.com/golang/mock/gomock"
+	definition "github.com/golang/mock/mockgen/internal/tests/import_source/definition"
 	reflect "reflect"
 )
 

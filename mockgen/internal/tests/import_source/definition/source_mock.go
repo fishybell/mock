@@ -5,7 +5,7 @@
 package source
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 

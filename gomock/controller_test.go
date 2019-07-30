@@ -21,7 +21,7 @@ import (
 
 	"strings"
 
-	"github.com/fishybell/mock/gomock"
+	"github.com/golang/mock/gomock"
 )
 
 type ErrorReporter struct {

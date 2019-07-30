@@ -51,7 +51,7 @@ func TestFileParser_ParsePackage(t *testing.T) {
 		importedInterfaces: make(map[string]map[string]*ast.InterfaceType),
 	}
 
-	err = p.parsePackage("github.com/fishybell/mock/mockgen/internal/tests/custom_package_name/greeter")
+	err = p.parsePackage("github.com/golang/mock/mockgen/internal/tests/custom_package_name/greeter")
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}

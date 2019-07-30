@@ -5,7 +5,7 @@
 package users_test
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 

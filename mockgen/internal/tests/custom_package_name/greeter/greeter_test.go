@@ -3,8 +3,8 @@ package greeter
 import (
 	"testing"
 
-	"github.com/fishybell/mock/gomock"
-	"github.com/fishybell/mock/mockgen/internal/tests/custom_package_name/client/v1"
+	"github.com/golang/mock/gomock"
+	"github.com/golang/mock/mockgen/internal/tests/custom_package_name/client/v1"
 )
 
 func TestGreeter_Greet(t *testing.T) {

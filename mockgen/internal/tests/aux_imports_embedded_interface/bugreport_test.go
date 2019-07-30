@@ -3,7 +3,7 @@ package bugreport
 import (
 	"testing"
 
-	"github.com/fishybell/mock/gomock"
+	"github.com/golang/mock/gomock"
 )
 
 // TestValidInterface assesses whether or not the generated mock is valid

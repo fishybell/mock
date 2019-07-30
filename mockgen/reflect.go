@@ -29,7 +29,7 @@ import (
 	"runtime"
 	"text/template"
 
-	"github.com/fishybell/mock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 )
 
 var (
@@ -185,7 +185,7 @@ import (
 	"path"
 	"reflect"
 
-	"github.com/fishybell/mock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 
 	pkg_ {{printf "%q" .ImportPath}}
 )

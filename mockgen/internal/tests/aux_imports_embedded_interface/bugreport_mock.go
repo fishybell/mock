@@ -5,8 +5,8 @@
 package bugreport
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
-	faux "github.com/fishybell/mock/mockgen/internal/tests/aux_imports_embedded_interface/faux"
+	gomock "github.com/golang/mock/gomock"
+	faux "github.com/golang/mock/mockgen/internal/tests/aux_imports_embedded_interface/faux"
 	reflect "reflect"
 )
 

@@ -7,7 +7,7 @@ package dot_imports
 import (
 	bytes "bytes"
 	. "context"
-	gomock "github.com/fishybell/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	. "net/http"
 	reflect "reflect"
 )

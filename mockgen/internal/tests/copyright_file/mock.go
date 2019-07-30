@@ -12,7 +12,7 @@
 package empty_interface
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 )
 
 // MockEmpty is a mock of Empty interface

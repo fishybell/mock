@@ -5,8 +5,8 @@
 package users_test
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
-	mock_in_test_package "github.com/fishybell/mock/mockgen/internal/tests/mock_in_test_package"
+	gomock "github.com/golang/mock/gomock"
+	mock_in_test_package "github.com/golang/mock/mockgen/internal/tests/mock_in_test_package"
 	reflect "reflect"
 )
 

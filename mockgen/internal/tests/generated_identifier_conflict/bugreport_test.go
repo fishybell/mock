@@ -1,7 +1,7 @@
 package bugreport
 
 import (
-	"github.com/fishybell/mock/gomock"
+	"github.com/golang/mock/gomock"
 	"testing"
 )
 

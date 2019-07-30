@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/fishybell/mock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 	"golang.org/x/tools/go/packages"
 )
 

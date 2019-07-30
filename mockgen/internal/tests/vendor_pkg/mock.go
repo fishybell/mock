@@ -5,7 +5,7 @@
 package vendor_pkg
 
 import (
-	gomock "github.com/fishybell/mock/gomock"
+	gomock "github.com/golang/mock/gomock"
 	reflect "reflect"
 )
 

@@ -36,11 +36,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/fishybell/mock/mockgen/model"
+	"github.com/golang/mock/mockgen/model"
 )
 
 const (
-	gomockImportPath = "github.com/fishybell/mock/gomock"
+	gomockImportPath = "github.com/golang/mock/gomock"
 )
 
 var (
