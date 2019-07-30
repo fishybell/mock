@@ -1,4 +1,4 @@
-gomock [![Build Status][travis-ci-badge]][travis-ci] [![GoDoc][godoc-badge]][godoc]
+gomock
 ======
 
 GoMock is a mocking framework for the [Go programming language][golang]. It
