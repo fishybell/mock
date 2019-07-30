@@ -1,7 +1,7 @@
 gomock
 ======
 
-GoMock is a mocking framework for the [Go programming language][golang]. It
+GoMock is a mocking framework for the [Go programming language](https://golang.org). It
 integrates well with Go's built-in `testing` package, but can be used in other
 contexts too. This is a fork that allows the gomock library to print its output 
 as a diff. This is especially useful when the mock receives a map or a slice
