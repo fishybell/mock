@@ -15,7 +15,10 @@
 package gomock
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
@@ -458,12 +461,15 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 
 	var e, a string
 	if et != reflect.TypeOf("") {
-		e = spewConfig.Sdump(expected)
-		a = spewConfig.Sdump(actual)
+		e = strings.ReplaceAll(spewConfig.Sdump(expected), "\\n", "\n")
+		a = strings.ReplaceAll(spewConfig.Sdump(actual), "\\n", "\n")
 	} else {
 		e = reflect.ValueOf(expected).String()
 		a = reflect.ValueOf(actual).String()
 	}
+
+	// maybe the data is a json string, in which case it should be formatted as such
+	e, a = maybeJson(e, a, expected, actual)
 
 	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 		A:        difflib.SplitLines(a),
@@ -487,4 +493,36 @@ func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
 		k = t.Kind()
 	}
 	return t, k
+}
+
+func maybeJson(eOrig string, aOrig string, expected interface{}, actual interface{}) (eOut string, aOut string) {
+	eObj := map[string]interface{}{}
+	aObj := map[string]interface{}{}
+
+	eString := originalString(eOrig, expected)
+	aString := originalString(aOrig, actual)
+
+	eErr := json.Unmarshal([]byte(eString), &eObj)
+	aErr := json.Unmarshal([]byte(aString), &aObj)
+
+	if eErr == nil && aErr == nil {
+		eOut = spewConfig.Sdump(eObj)
+		aOut = spewConfig.Sdump(aObj)
+	} else {
+		eOut = eOrig
+		aOut = aOrig
+	}
+
+	return
+}
+
+func originalString(orig string, unknown interface{}) string {
+	if s, ok := unknown.(fmt.Stringer); ok {
+		return s.String()
+	} else if s, ok := unknown.(io.Reader); ok {
+		bytes, _ := ioutil.ReadAll(s) // no one else will read it, so I may as well
+		return string(bytes)
+	}
+
+	return orig
 }
