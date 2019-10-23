@@ -66,6 +66,7 @@ func (e eqMatcher) String() string {
 }
 
 func (e eqMatcher) Value() interface{} {
+	fmt.Println("eqMatcher Value()")
 	return e.x
 }
 
@@ -91,6 +92,7 @@ func (nilMatcher) String() string {
 }
 
 func (nilMatcher) Value() interface{} {
+	fmt.Println("nilMatcher Value()")
 	return nil
 }
 
@@ -120,6 +122,7 @@ func (m assignableToTypeOfMatcher) String() string {
 }
 
 func (a assignableToTypeOfMatcher) Value() interface{} {
+	fmt.Println("assignableToTypeOfMatcher Value()")
 	return a.targetType
 }
 

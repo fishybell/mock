@@ -299,54 +299,74 @@ func (c *Call) String() string {
 // Tests if the given call matches the expected call.
 // If yes, returns nil. If no, returns error with message explaining why it does not match.
 func (c *Call) matches(args []interface{}) error {
+	fmt.Println("I don't know what I'm doing")
 	if !c.methodType.IsVariadic() {
+		fmt.Println("1")
 		if len(args) != len(c.args) {
+			fmt.Println("2")
 			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
 				c.origin, len(args), len(c.args))
 		}
 
 		for i, m := range c.args {
+			fmt.Println("3")
 			if !m.Matches(args[i]) {
+				fmt.Println("4")
 				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
 					c.origin, strconv.Itoa(i), diff(args[i], m))
 			}
 		}
 	} else {
+		fmt.Println("5")
 		if len(c.args) < c.methodType.NumIn()-1 {
+			fmt.Println("6")
 			return fmt.Errorf("Expected call at %s has the wrong number of matchers. Got: %d, want: %d",
 				c.origin, len(c.args), c.methodType.NumIn()-1)
 		}
 		if len(c.args) != c.methodType.NumIn() && len(args) != len(c.args) {
+			fmt.Println("7")
 			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: %d",
 				c.origin, len(args), len(c.args))
 		}
 		if len(args) < len(c.args)-1 {
+			fmt.Println("8")
 			return fmt.Errorf("Expected call at %s has the wrong number of arguments. Got: %d, want: greater than or equal to %d",
 				c.origin, len(args), len(c.args)-1)
 		}
 
 		for i, m := range c.args {
+			fmt.Println("9")
 			if i < c.methodType.NumIn()-1 {
+				fmt.Println("11")
 				// Non-variadic args
 				if !m.Matches(args[i]) {
+					fmt.Println("12")
 					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
 						c.origin, strconv.Itoa(i), diff(args[i], m))
 				}
+				fmt.Println("13")
 				continue
 			}
+			fmt.Println("14")
 			// The last arg has a possibility of a variadic argument, so let it branch
 
 			// sample: Foo(a int, b int, c ...int)
+			fmt.Println(c.args, args)
 			if i < len(c.args) && i < len(args) {
+				fmt.Println("15")
 				if m.Matches(args[i]) {
+					fmt.Println("16")
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, gomock.Any())
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, someSliceMatcher)
 					// Got Foo(a, b, c) want Foo(matcherA, matcherB, matcherC)
 					// Got Foo(a, b) want Foo(matcherA, matcherB)
 					// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
 					continue
+				} else {
+					fmt.Printf("Nathan, look here------------->\n%T, %T, %T\n", c.args[i], args[i], m)
 				}
 			}
+			fmt.Println("17")
 
 			// The number of actual args don't match the number of matchers,
 			// or the last matcher is a slice and the last arg is not.
@@ -355,11 +375,15 @@ func (c *Call) matches(args []interface{}) error {
 			// Convert the remaining arguments, if any, into a slice of the
 			// expected type.
 			vargsType := c.methodType.In(c.methodType.NumIn() - 1)
+			fmt.Println("vargsType", vargsType)
 			vargs := reflect.MakeSlice(vargsType, 0, len(args)-i)
 			for _, arg := range args[i:] {
+				fmt.Println("18")
 				vargs = reflect.Append(vargs, reflect.ValueOf(arg))
 			}
+			fmt.Println("19")
 			if m.Matches(vargs.Interface()) {
+				fmt.Println("20")
 				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, gomock.Any())
 				// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, someSliceMatcher)
 				// Got Foo(a, b) want Foo(matcherA, matcherB, gomock.Any())
@@ -372,15 +396,22 @@ func (c *Call) matches(args []interface{}) error {
 			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-				c.origin, strconv.Itoa(i), args[i:], c.args[i])
+			fmt.Println("21")
+			fmt.Printf("Nathan, look here=============>\n%T, %T, %T\n", c.args[i], args[i], m)
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+				c.origin, strconv.Itoa(i), diff(args[i], m))
+			//return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+			//	c.origin, strconv.Itoa(i), args[i:], c.args[i])
 
 		}
 	}
+	fmt.Println("22")
 
 	// Check that all prerequisite calls have been satisfied.
 	for _, preReqCall := range c.preReqs {
+		fmt.Println("24")
 		if !preReqCall.satisfied() {
+			fmt.Println("25")
 			return fmt.Errorf("Expected call at %s doesn't have a prerequisite call satisfied:\n%v\nshould be called before:\n%v",
 				c.origin, preReqCall, c)
 		}
@@ -388,8 +419,10 @@ func (c *Call) matches(args []interface{}) error {
 
 	// Check that the call is not exhausted.
 	if c.exhausted() {
+		fmt.Println("26")
 		return fmt.Errorf("Expected call at %s has already been called the max number of times.", c.origin)
 	}
+	fmt.Println("27")
 
 	return nil
 }
@@ -438,24 +471,36 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 	var actual interface{}
 	var expected interface{}
 	if diffable, ok := matcher.(DiffableMatcher); ok {
+		fmt.Println("diffable")
 		expected = diffable.Value()
-		actual = actualOrig
+		if diffable, ok := actualOrig.(DiffableMatcher); ok {
+			actual = diffable.Value()
+		} else {
+			actual = actualOrig
+		}
 	} else {
+		fmt.Println("stringed")
 		expected = matcher.String() // keep the types the same
 		actual = fmt.Sprintf("%s", actualOrig)
 	}
+	fmt.Println("ICE ICE ICE", actual, "ICE ICE ICE", expected)
 	if expected == nil || actual == nil {
+		fmt.Println("I don't llike you")
 		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
 	}
 
 	et, ek := typeAndKind(expected)
+	fmt.Println("et, ek", et, ek)
 	at, _ := typeAndKind(actual)
 
 	if et != at {
+		fmt.Println("I don't llike youu")
+		fmt.Printf("Incorrect types. Got: %v Want: %v", at, et)
 		return fmt.Sprintf("Incorrect types. Got: %v Want: %v", at, et)
 	}
 
 	if ek != reflect.Struct && ek != reflect.Map && ek != reflect.Slice && ek != reflect.Array && ek != reflect.String {
+		fmt.Println("I don't llike youuu")
 		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
 	}
 
@@ -496,6 +541,7 @@ func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
 }
 
 func maybeJson(eOrig string, aOrig string, expected interface{}, actual interface{}) (eOut string, aOut string) {
+	fmt.Println("FIRE FIRE FIRE")
 	eObj := map[string]interface{}{}
 	aObj := map[string]interface{}{}
 
