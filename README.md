@@ -19,3 +19,21 @@ Install and gomock/mockgen as normal, then:
     echo "replace github.com/golang/mock => ./vendor/mock" >> go.mod
 
 This is necessary as the mock package uses types rather than interfaces.
+
+If you are using a Matcher, extending the Matcher interface to be a DiffableMatcher interface is required for fancier output:
+
+    // A DiffableMatcher is a representation of a class of values.
+    // It is used to represent the valid or expected arguments to a mocked method.
+    // The only difference is the Value() function to allow for full matching
+    type DiffableMatcher interface {
+    	// Matches returns whether x is a match.
+    	Matches(x interface{}) bool
+    
+    	// String describes what the matcher matches.
+    	String() string
+    
+    	// Value returns the original value, for use in Diff output
+    	Value() interface{}
+    }
+
+This is exactly the same as the Matcher interface, with the addition of the Value() function. You can continue to use the Matcher interface if you wish.
