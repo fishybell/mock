@@ -489,9 +489,9 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
 	}
 
-	et, ek := typeAndKind(expected)
+	et, ek, _ := typeAndKindAndValue(expected)
 	fmt.Println("et, ek", et, ek)
-	at, _ := typeAndKind(actual)
+	at, _, _ := typeAndKindAndValue(actual)
 
 	if et != at {
 		fmt.Println("I don't llike youu")
@@ -506,9 +506,11 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 
 	var e, a string
 	if et != reflect.TypeOf("") {
+		fmt.Println("not a string, now a string")
 		e = strings.ReplaceAll(spewConfig.Sdump(expected), "\\n", "\n")
 		a = strings.ReplaceAll(spewConfig.Sdump(actual), "\\n", "\n")
 	} else {
+		fmt.Println("already a string")
 		e = reflect.ValueOf(expected).String()
 		a = reflect.ValueOf(actual).String()
 	}
@@ -529,29 +531,31 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 	return "Diff:\n" + diff
 }
 
-func typeAndKind(v interface{}) (reflect.Type, reflect.Kind) {
+func typeAndKindAndValue(v interface{}) (reflect.Type, reflect.Kind, reflect.Value) {
 	t := reflect.TypeOf(v)
 	k := t.Kind()
+	va := reflect.Indirect(reflect.ValueOf(v))
 
 	if k == reflect.Ptr {
 		t = t.Elem()
 		k = t.Kind()
 	}
-	return t, k
+	return t, k, va
 }
 
 func maybeJson(eOrig string, aOrig string, expected interface{}, actual interface{}) (eOut string, aOut string) {
-	fmt.Println("FIRE FIRE FIRE")
 	eObj := map[string]interface{}{}
 	aObj := map[string]interface{}{}
 
-	eString := originalString(eOrig, expected)
-	aString := originalString(aOrig, actual)
+	fmt.Println("FIRE FIRE FIRE expected")
+	eBytes := originalBytes(eOrig, expected)
+	fmt.Println("FIRE FIRE FIRE actual")
+	aBytes := originalBytes(aOrig, actual)
 
-	eErr := json.Unmarshal([]byte(eString), &eObj)
-	aErr := json.Unmarshal([]byte(aString), &aObj)
+	eErr := json.Unmarshal(eBytes, &eObj)
+	aErr := json.Unmarshal(aBytes, &aObj)
 
-	if eErr == nil && aErr == nil {
+	if eErr == nil && aErr == nil { // we only dump them as json if they are both json
 		eOut = spewConfig.Sdump(eObj)
 		aOut = spewConfig.Sdump(aObj)
 	} else {
@@ -562,13 +566,86 @@ func maybeJson(eOrig string, aOrig string, expected interface{}, actual interfac
 	return
 }
 
-func originalString(orig string, unknown interface{}) string {
-	if s, ok := unknown.(fmt.Stringer); ok {
-		return s.String()
-	} else if s, ok := unknown.(io.Reader); ok {
+func originalBytes(orig string, unknown interface{}) []byte {
+	fmt.Printf("finding bytes from original: %s\n", allTheTypes(unknown))
+	if s, ok := unknown.(io.Reader); ok {
+		fmt.Println("found reader")
 		bytes, _ := ioutil.ReadAll(s) // no one else will read it, so I may as well
-		return string(bytes)
+		return bytes
+	} else if s, ok := unknown.(fmt.Stringer); ok {
+		fmt.Println("found stringer")
+		return []byte(s.String())
+	}
+	fmt.Println("found nothing, jsonifying")
+	if bytes, err := json.Marshal(unknown); err == nil {
+		fmt.Println("jsonified", string(bytes))
+		return bytes
 	}
 
-	return orig
+	return []byte(orig)
+}
+
+func allTheTypes(unknown interface{}) string {
+	ut, uk, uv := typeAndKindAndValue(unknown)
+	switch uk {
+	case reflect.Struct:
+		return structTypes(ut, uv)
+	case reflect.Map:
+		return mapTypes(ut, uv)
+	case reflect.Slice:
+		return sliceTypes(ut, uv)
+	case reflect.Array:
+		return sliceTypes(ut, uv)
+	}
+
+	return fmt.Sprintf("%T", unknown)
+}
+
+func structTypes(ut reflect.Type, uv reflect.Value) string {
+	values := make([]string, uv.NumField())
+
+	for i := 0; i < uv.NumField(); i++ {
+		typeField := ut.Field(i)
+		valueField := uv.Field(i)
+		if valueField.CanSet() {
+			values[i] = fmt.Sprintf("%s:%s", typeField.Name, allTheTypes(valueField.Interface()))
+		} else {
+			values[i] = fmt.Sprintf("%s:%s", typeField.Name, "unexported")
+		}
+	}
+
+	return "[" + strings.Join(values, " ") + "]"
+}
+
+func mapTypes(ut reflect.Type, uv reflect.Value) string {
+	start := fmt.Sprintf("[%v", reflect.MapOf(ut.Key(), ut.Elem()))
+	iter := uv.MapRange()
+	for iter.Next() {
+		k := iter.Key()
+		v := iter.Value()
+		start = fmt.Sprintf("%s %s:%s", start, k, allTheTypes(v.Interface()))
+	}
+
+	return start + "]"
+}
+
+func sliceTypes(ut reflect.Type, uv reflect.Value) string {
+	middle := make([]string, uv.Len())
+	for i := 0; i < uv.Len(); i++ {
+		v := uv.Index(i)
+		middle[i] = allTheTypes(v.Interface())
+	}
+	return fmt.Sprintf("[]%s{%s}", getType(ut), strings.Join(middle, " "))
+}
+
+func getType(ut reflect.Type) string {
+	if ut.Kind() == reflect.Ptr {
+		return "*" + ut.Elem().Name()
+	} else {
+		name := ut.Name()
+		if name == "" {
+			return "interface{}"
+		}
+		return name
+	}
 }
