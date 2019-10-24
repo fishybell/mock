@@ -526,10 +526,13 @@ func maybeJson(eOrig string, aOrig string, expected interface{}, actual interfac
 
 func originalBytes(orig string, unknown interface{}) []byte {
 	if s, ok := unknown.(io.Reader); ok {
+		reset(s)
 		bytes, _ := ioutil.ReadAll(s) // no one else will read it, so I may as well
+		reset(s)
 		return bytes
 	} else if s, ok := unknown.(fmt.Stringer); ok {
-		return []byte(s.String())
+		bytes := []byte(s.String())
+		return bytes
 	}
 	if bytes, err := json.Marshal(unknown); err == nil {
 		return bytes
@@ -601,5 +604,11 @@ func getType(ut reflect.Type) string {
 			return "interface{}"
 		}
 		return name
+	}
+}
+
+func reset(r io.Reader) {
+	if s, ok := r.(io.Seeker); ok {
+		s.Seek(0, 0)
 	}
 }
