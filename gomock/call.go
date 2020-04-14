@@ -290,9 +290,16 @@ func (c *Call) exhausted() bool {
 func (c *Call) String() string {
 	args := make([]string, len(c.args))
 	for i, arg := range c.args {
-		args[i] = arg.String()
+		sarg := fmt.Sprintf("arg%d: %s", i, arg.String())
+		if len(sarg) > 75 {
+			sarg = sarg[:72] + "..."
+		}
+		args[i] = sarg
 	}
-	arguments := strings.Join(args, ", ")
+	arguments := strings.Join(args, ",\n  ")
+	if len(args) > 1 {
+		arguments = "\n  " + arguments + ",\n"
+	}
 	return fmt.Sprintf("%T.%v(%s) %s", c.receiver, c.method, arguments, c.origin)
 }
 
@@ -485,7 +492,7 @@ func diff(actualOrig interface{}, matcher Matcher) string {
 		FromDate: "",
 		ToFile:   "Want",
 		ToDate:   "",
-		Context:  1,
+		Context:  0,
 	})
 
 	return "Diff:\n" + diff

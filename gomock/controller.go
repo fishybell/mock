@@ -60,6 +60,7 @@ import (
 	"fmt"
 	"reflect"
 	"runtime"
+	"strings"
 	"sync"
 )
 
@@ -198,7 +199,21 @@ func (ctrl *Controller) Call(receiver interface{}, method string, args ...interf
 		expected, err := ctrl.expectedCalls.FindMatch(receiver, method, args)
 		if err != nil {
 			origin := callerInfo(2)
-			ctrl.T.Fatalf("Unexpected call to %T.%v(%v) at %s because: %s", receiver, method, args, origin, err)
+			sargs := make([]string, len(args))
+			for i, arg := range args {
+				sarg := fmt.Sprintf("arg%d: %s", i, arg)
+				if len(sarg) > 75 {
+					sarg = sarg[:72] + "..."
+				}
+				sargs[i] = sarg
+			}
+
+			arguments := strings.Join(sargs, ",\n  ")
+
+			if len(args) > 1 {
+				arguments = "\n  " + arguments + ",\n"
+			}
+			ctrl.T.Fatalf("Unexpected call to %T.%v(%s) at %s because: %s\n", receiver, method, arguments, origin, err)
 		}
 
 		// Two things happen here:
@@ -249,7 +264,7 @@ func (ctrl *Controller) Finish() {
 	// Check that all remaining expected calls are satisfied.
 	failures := ctrl.expectedCalls.Failures()
 	for _, call := range failures {
-		ctrl.T.Errorf("missing call(s) to %v", call)
+		ctrl.T.Errorf("missing call(s) to %v\n", call)
 	}
 	if len(failures) != 0 {
 		ctrl.T.Fatalf("aborting test due to missing call(s)")
