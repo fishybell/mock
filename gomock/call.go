@@ -521,9 +521,19 @@ func maybeJson(eOrig string, aOrig string, expected interface{}, actual interfac
 	aErr := json.Unmarshal(aBytes, &aObj)
 
 	if eErr == nil && aErr == nil { // we only dump them as json if they are both json
+		// both were json
 		eOut = spewConfig.Sdump(eObj)
 		aOut = spewConfig.Sdump(aObj)
+	} else if eErr == nil && aErr != nil {
+		// expected is json, actual is not
+		eOut = "Valid JSON"
+		aOut = "Invalid JSON: " + aErr.Error()
+	} else if aErr == nil && eErr != nil {
+		// actual is json, expected is not
+		aOut = "Valid JSON"
+		eOut = "Invalid JSON: " + eErr.Error()
 	} else {
+		// neither was json
 		eOut = eOrig
 		aOut = aOrig
 	}
