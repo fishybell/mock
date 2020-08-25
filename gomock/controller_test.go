@@ -60,7 +60,7 @@ func (e *ErrorReporter) assertLogf(expectedErrMsgs ...string) {
 	}
 	for i, expectedErrMsg := range expectedErrMsgs {
 		if !strings.Contains(e.log[i], expectedErrMsg) {
-			e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", e.log[i], expectedErrMsg)
+			e.t.Errorf("Error message:\ngot: \n%q\nwant to contain: \n%q\n", e.log[i], expectedErrMsg)
 		}
 	}
 }
@@ -87,7 +87,7 @@ func (e *ErrorReporter) assertFatal(fn func(), expectedErrMsgs ...string) {
 				actualErrMsg := e.log[len(e.log)-1]
 				for _, expectedErrMsg := range expectedErrMsgs {
 					if !strings.Contains(actualErrMsg, expectedErrMsg) {
-						e.t.Errorf("Error message:\ngot: %q\nwant to contain: %q\n", actualErrMsg, expectedErrMsg)
+						e.t.Errorf("Error message:\ngot: \n%q\nwant to contain: \n%q\n", actualErrMsg, expectedErrMsg)
 					}
 				}
 			}
@@ -299,13 +299,13 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Unexpected call to *gomock_test.Subject.ActOnTestStructMethod(\n  arg0: {%!s(int=123) no message},\n  arg1: %!s(int=15),\n) at /Users/nbell/devel/mock/gomock/controller_test.go:101 because: \nExpected call at /Users/nbell/devel/mock/gomock/controller_test.go:296 doesn't match the argument at index 0.\nDiff:\n--- Got\n+++ Want\n@@ -2 +2 @@\n- (string) (len=7) \"Message\": (string) (len=10) \"no message\",\n+ (string) (len=7) \"Message\": (string) (len=5) \"hello\",\n\n")
+		"Unexpected call to *gomock_test.Subject.ActOnTestStructMethod(\n  arg0: {%!s(int=123) no message},\n  arg1: %!s(int=15),\n) at", "because: \nExpected call at", "doesn't match the argument at index 0.\nDiff:\n--- Got\n+++ Want\n@@ -2 +2 @@\n- (string) (len=7) \"Message\": (string) (len=10) \"no message\",\n+ (string) (len=7) \"Message\": (string) (len=5) \"hello\",\n\n")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Unexpected call to *gomock_test.Subject.ActOnTestStructMethod(\n  arg0: {%!s(int=11) no message},\n  arg1: %!s(int=15),\n) at /Users/nbell/devel/mock/gomock/controller_test.go:101 because: \nExpected call at /Users/nbell/devel/mock/gomock/controller_test.go:296 doesn't match the argument at index 0.\nDiff:\n--- Got\n+++ Want\n@@ -2,2 +2,2 @@\n- (string) (len=7) \"Message\": (string) (len=10) \"no message\",\n- (string) (len=6) \"Number\": (float64) 11\n+ (string) (len=7) \"Message\": (string) (len=5) \"hello\",\n+ (string) (len=6) \"Number\": (float64) 123\n\n")
+		"Unexpected call to *gomock_test.Subject.ActOnTestStructMethod(\n  arg0: {%!s(int=11) no message},\n  arg1: %!s(int=15),\n) at", "because: \nExpected call at", "doesn't match the argument at index 0.\nDiff:\n--- Got\n+++ Want\n@@ -2,2 +2,2 @@\n- (string) (len=7) \"Message\": (string) (len=10) \"no message\",\n- (string) (len=6) \"Number\": (float64) 11\n+ (string) (len=7) \"Message\": (string) (len=5) \"hello\",\n+ (string) (len=6) \"Number\": (float64) 123\n\n")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.
