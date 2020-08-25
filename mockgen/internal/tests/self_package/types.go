@@ -1,4 +1,4 @@
-//go:generate mockgen -package core -self_package github.com/golang/mock/mockgen/internal/tests/self_package -destination mock.go github.com/golang/mock/mockgen/internal/tests/self_package Methods
+//go:generate mockgen -package core -self_package github.com/fishybell/mock/mockgen/internal/tests/self_package -destination mock.go github.com/fishybell/mock/mockgen/internal/tests/self_package Methods
 package core
 
 type Info struct {

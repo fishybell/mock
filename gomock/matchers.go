@@ -87,6 +87,20 @@ func GotFormatterAdapter(s GotFormatter, m Matcher) Matcher {
 	}
 }
 
+// A DiffableMatcher is a representation of a class of values.
+// It is used to represent the valid or expected arguments to a mocked method.
+// The only difference is the Value() function to allow for full matching
+type DiffableMatcher interface {
+	// Matches returns whether x is a match.
+	Matches(x interface{}) bool
+
+	// String describes what the matcher matches.
+	String() string
+
+	// Value returns the original value, for use in Diff output
+	Value() interface{}
+}
+
 type anyMatcher struct{}
 
 func (anyMatcher) Matches(interface{}) bool {
@@ -109,6 +123,10 @@ func (e eqMatcher) String() string {
 	return fmt.Sprintf("is equal to %v", e.x)
 }
 
+func (e eqMatcher) Value() interface{} {
+	return e.x
+}
+
 type nilMatcher struct{}
 
 func (nilMatcher) Matches(x interface{}) bool {
@@ -128,6 +146,10 @@ func (nilMatcher) Matches(x interface{}) bool {
 
 func (nilMatcher) String() string {
 	return "is nil"
+}
+
+func (nilMatcher) Value() interface{} {
+	return nil
 }
 
 type notMatcher struct {
@@ -192,6 +214,10 @@ func (m lenMatcher) Matches(x interface{}) bool {
 
 func (m lenMatcher) String() string {
 	return fmt.Sprintf("has length %d", m.i)
+}
+
+func (a assignableToTypeOfMatcher) Value() interface{} {
+	return a.targetType
 }
 
 // Constructors

@@ -15,10 +15,16 @@
 package gomock
 
 import (
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/davecgh/go-spew/spew"
+	"github.com/pmezard/go-difflib/difflib"
 )
 
 // Call represents an expected call to a mock.
@@ -287,9 +293,16 @@ func (c *Call) exhausted() bool {
 func (c *Call) String() string {
 	args := make([]string, len(c.args))
 	for i, arg := range c.args {
-		args[i] = arg.String()
+		sarg := fmt.Sprintf("arg%d: %s", i, arg.String())
+		if len(sarg) > 75 {
+			sarg = sarg[:72] + "..."
+		}
+		args[i] = sarg
 	}
-	arguments := strings.Join(args, ", ")
+	arguments := strings.Join(args, ",\n  ")
+	if len(args) > 1 {
+		arguments = "\n  " + arguments + ",\n"
+	}
 	return fmt.Sprintf("%T.%v(%s) %s", c.receiver, c.method, arguments, c.origin)
 }
 
@@ -304,10 +317,8 @@ func (c *Call) matches(args []interface{}) error {
 
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf(
-					"expected call at %s doesn't match the argument at index %d.\nGot: %v\nWant: %v",
-					c.origin, i, formatGottenArg(m, args[i]), m,
-				)
+				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+					c.origin, strconv.Itoa(i), diff(args[i], m))
 			}
 		}
 	} else {
@@ -328,8 +339,8 @@ func (c *Call) matches(args []interface{}) error {
 			if i < c.methodType.NumIn()-1 {
 				// Non-variadic args
 				if !m.Matches(args[i]) {
-					return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-						c.origin, strconv.Itoa(i), formatGottenArg(m, args[i]), m)
+					return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+						c.origin, strconv.Itoa(i), diff(args[i], m))
 				}
 				continue
 			}
@@ -344,6 +355,7 @@ func (c *Call) matches(args []interface{}) error {
 					// Got Foo(a, b) want Foo(matcherA, matcherB)
 					// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD)
 					continue
+				} else {
 				}
 			}
 
@@ -371,9 +383,8 @@ func (c *Call) matches(args []interface{}) error {
 			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-
-			return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
-				c.origin, strconv.Itoa(i), formatGottenArg(m, args[i:]), c.args[i])
+			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+				c.origin, strconv.Itoa(i), diff(args[i], m))
 		}
 	}
 
@@ -430,4 +441,199 @@ func formatGottenArg(m Matcher, arg interface{}) string {
 		got = gs.Got(arg)
 	}
 	return got
+}
+
+var spewConfig = spew.ConfigState{
+	Indent:                  " ",
+	DisablePointerAddresses: true,
+	DisableCapacities:       true,
+	SortKeys:                true,
+}
+
+// diff returns a diff of both values as long as both are of the same type and
+// are a struct, map, slice, array or string. Otherwise it tries its best to return something useful
+func diff(actualOrig interface{}, matcher Matcher) string {
+	var actual interface{}
+	var expected interface{}
+	if diffable, ok := matcher.(DiffableMatcher); ok {
+		expected = diffable.Value()
+		if diffable, ok := actualOrig.(DiffableMatcher); ok {
+			actual = diffable.Value()
+		} else {
+			actual = actualOrig
+		}
+	} else {
+		expected = matcher.String() // keep the types the same
+		actual = fmt.Sprintf("%s", actualOrig)
+	}
+	if expected == nil || actual == nil {
+		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
+	}
+
+	et, ek, _ := typeAndKindAndValue(expected)
+	at, _, _ := typeAndKindAndValue(actual)
+
+	if et != at {
+		return fmt.Sprintf("Incorrect types. Got: %v Want: %v", at, et)
+	}
+
+	if ek != reflect.Struct && ek != reflect.Map && ek != reflect.Slice && ek != reflect.Array && ek != reflect.String {
+		return fmt.Sprintf("Got: %v\nWant: %v", actual, matcher.String())
+	}
+
+	var e, a string
+	if et != reflect.TypeOf("") {
+		e = strings.ReplaceAll(spewConfig.Sdump(expected), "\\n", "\n")
+		a = strings.ReplaceAll(spewConfig.Sdump(actual), "\\n", "\n")
+	} else {
+		e = reflect.ValueOf(expected).String()
+		a = reflect.ValueOf(actual).String()
+	}
+
+	// maybe the data is a json string, in which case it should be formatted as such
+	e, a = maybeJson(e, a, expected, actual)
+
+	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:        difflib.SplitLines(a),
+		B:        difflib.SplitLines(e),
+		FromFile: "Got",
+		FromDate: "",
+		ToFile:   "Want",
+		ToDate:   "",
+		Context:  0,
+	})
+
+	return "Diff:\n" + diff
+}
+
+func typeAndKindAndValue(v interface{}) (reflect.Type, reflect.Kind, reflect.Value) {
+	t := reflect.TypeOf(v)
+	k := t.Kind()
+	va := reflect.Indirect(reflect.ValueOf(v))
+
+	if k == reflect.Ptr {
+		t = t.Elem()
+		k = t.Kind()
+	}
+	return t, k, va
+}
+
+func maybeJson(eOrig string, aOrig string, expected interface{}, actual interface{}) (eOut string, aOut string) {
+	eObj := map[string]interface{}{}
+	aObj := map[string]interface{}{}
+
+	eBytes := originalBytes(eOrig, expected)
+	aBytes := originalBytes(aOrig, actual)
+
+	eErr := json.Unmarshal(eBytes, &eObj)
+	aErr := json.Unmarshal(aBytes, &aObj)
+
+	if eErr == nil && aErr == nil { // we only dump them as json if they are both json
+		// both were json
+		eOut = spewConfig.Sdump(eObj)
+		aOut = spewConfig.Sdump(aObj)
+	} else if eErr == nil && aErr != nil {
+		// expected is json, actual is not
+		eOut = "Valid JSON"
+		aOut = "Invalid JSON: " + aErr.Error()
+	} else if aErr == nil && eErr != nil {
+		// actual is json, expected is not
+		aOut = "Valid JSON"
+		eOut = "Invalid JSON: " + eErr.Error()
+	} else {
+		// neither was json
+		eOut = eOrig
+		aOut = aOrig
+	}
+
+	return
+}
+
+func originalBytes(orig string, unknown interface{}) []byte {
+	if s, ok := unknown.(io.Reader); ok {
+		reset(s)
+		bytes, _ := ioutil.ReadAll(s) // no one else will read it, so I may as well
+		reset(s)
+		return bytes
+	} else if s, ok := unknown.(fmt.Stringer); ok {
+		bytes := []byte(s.String())
+		return bytes
+	}
+	if bytes, err := json.Marshal(unknown); err == nil {
+		return bytes
+	}
+
+	return []byte(orig)
+}
+
+// for the debugs
+func allTheTypes(unknown interface{}) string {
+	ut, uk, uv := typeAndKindAndValue(unknown)
+	switch uk {
+	case reflect.Struct:
+		return structTypes(ut, uv)
+	case reflect.Map:
+		return mapTypes(ut, uv)
+	case reflect.Slice:
+		return sliceTypes(ut, uv)
+	case reflect.Array:
+		return sliceTypes(ut, uv)
+	}
+
+	return fmt.Sprintf("%T", unknown)
+}
+
+func structTypes(ut reflect.Type, uv reflect.Value) string {
+	values := make([]string, uv.NumField())
+
+	for i := 0; i < uv.NumField(); i++ {
+		typeField := ut.Field(i)
+		valueField := uv.Field(i)
+		if valueField.CanSet() {
+			values[i] = fmt.Sprintf("%s:%s", typeField.Name, allTheTypes(valueField.Interface()))
+		} else {
+			values[i] = fmt.Sprintf("%s:%s", typeField.Name, "unexported")
+		}
+	}
+
+	return "[" + strings.Join(values, " ") + "]"
+}
+
+func mapTypes(ut reflect.Type, uv reflect.Value) string {
+	start := fmt.Sprintf("[%v", reflect.MapOf(ut.Key(), ut.Elem()))
+	iter := uv.MapRange()
+	for iter.Next() {
+		k := iter.Key()
+		v := iter.Value()
+		start = fmt.Sprintf("%s %s:%s", start, k, allTheTypes(v.Interface()))
+	}
+
+	return start + "]"
+}
+
+func sliceTypes(ut reflect.Type, uv reflect.Value) string {
+	middle := make([]string, uv.Len())
+	for i := 0; i < uv.Len(); i++ {
+		v := uv.Index(i)
+		middle[i] = allTheTypes(v.Interface())
+	}
+	return fmt.Sprintf("[]%s{%s}", getType(ut), strings.Join(middle, " "))
+}
+
+func getType(ut reflect.Type) string {
+	if ut.Kind() == reflect.Ptr {
+		return "*" + ut.Elem().Name()
+	} else {
+		name := ut.Name()
+		if name == "" {
+			return "interface{}"
+		}
+		return name
+	}
+}
+
+func reset(r io.Reader) {
+	if s, ok := r.(io.Seeker); ok {
+		s.Seek(0, 0)
+	}
 }

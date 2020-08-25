@@ -16,7 +16,7 @@ package faux
 import (
 	"log"
 
-	"github.com/golang/mock/mockgen/internal/tests/import_embedded_interface/other/ersatz"
+	"github.com/fishybell/mock/mockgen/internal/tests/import_embedded_interface/other/ersatz"
 )
 
 type Foreign interface {

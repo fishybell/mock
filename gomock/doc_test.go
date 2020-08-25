@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
-	mock_sample "github.com/golang/mock/sample/mock_user"
+	"github.com/fishybell/mock/gomock"
+	mock_sample "github.com/fishybell/mock/sample/mock_user"
 )
 
 func ExampleCall_DoAndReturn_latency() {

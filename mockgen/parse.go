@@ -32,8 +32,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golang/mock/mockgen/model"
-	"golang.org/x/mod/modfile"
+	"github.com/fishybell/mock/mockgen/model"
+	"golang.org/x/tools/go/packages"
 )
 
 var (

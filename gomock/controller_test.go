@@ -21,7 +21,7 @@ import (
 
 	"strings"
 
-	"github.com/golang/mock/gomock"
+	"github.com/fishybell/mock/gomock"
 )
 
 type ErrorReporter struct {
@@ -299,13 +299,13 @@ func TestUnexpectedArgValue_FirstArg(t *testing.T) {
 		// the method argument (of TestStruct type) has 1 unexpected value (for the Message field)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 123, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {123 no message}\nWant: is equal to {123 hello}")
+		"Diff:\n--- Got\n+++ Want\n@@ -2,3 +2,3 @@\n  Number: (int) 123,\n- Message: (string) (len=10) \"no message\"\n+ Message: (string) (len=5) \"hello\"\n }")
 
 	reporter.assertFatal(func() {
 		// the method argument (of TestStruct type) has 2 unexpected values (for both fields)
 		ctrl.Call(subject, "ActOnTestStructMethod", TestStruct{Number: 11, Message: "no message"}, 15)
 	}, "Unexpected call to", "doesn't match the argument at index 0",
-		"Got: {11 no message}\nWant: is equal to {123 hello}")
+		"Diff:\n--- Got\n+++ Want\n@@ -1,4 +1,4 @@\n (gomock_test.TestStruct) {\n- Number: (int) 11,\n- Message: (string) (len=10) \"no message\"\n+ Number: (int) 123,\n+ Message: (string) (len=5) \"hello\"\n }")
 
 	reporter.assertFatal(func() {
 		// The expected call wasn't made.

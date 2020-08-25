@@ -19,7 +19,7 @@ package gomock_test
 import (
 	"testing"
 
-	"github.com/golang/mock/gomock"
+	"github.com/fishybell/mock/gomock"
 )
 
 func (e *ErrorReporter) Cleanup(f func()) {

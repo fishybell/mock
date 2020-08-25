@@ -11,7 +11,7 @@ env:
 script:
   - go vet ./...
   - go build ./...
-  - go install github.com/golang/mock/mockgen
+  - go install github.com/fishybell/mock/mockgen
   - GO111MODULE=off go get -u golang.org/x/lint/golint
   - ./ci/check_go_fmt.sh
   - ./ci/check_go_lint.sh

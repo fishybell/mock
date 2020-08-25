@@ -1,9 +1,12 @@
-gomock [![Build Status][travis-ci-badge]][travis-ci] [![GoDoc][godoc-badge]][godoc]
+gomock
 ======
 
-GoMock is a mocking framework for the [Go programming language][golang]. It
+GoMock is a mocking framework for the [Go programming language](https://golang.org). It
 integrates well with Go's built-in `testing` package, but can be used in other
-contexts too.
+contexts too. This is a fork that allows the gomock library to print its output 
+as a diff. This is especially useful when the mock receives a map or a slice
+and errors. Instead of showing a gigantic blob, wrapping in the terminal several
+times, you get just the parts of the argument that are different.
 
 Installation
 ------------
@@ -13,20 +16,32 @@ Once you have [installed Go][golang-install], install the `mockgen` tool.
 To get the latest released version use:
 
 ```bash
-GO111MODULE=on go get github.com/golang/mock/mockgen@v1.4.3
+GO111MODULE=on go get github.com/fishybell/mock/mockgen@v1.4.3
 ```
 
 If you use `mockgen` in your CI pipeline, it may be more appropriate to fixate
 on a specific mockgen version.
 
+This is necessary as the mock package uses types rather than interfaces.
 
-Documentation
--------------
+If you are using a Matcher, extending the Matcher interface to be a DiffableMatcher interface is required for fancier output:
 
-After installing, you can use `go doc` to get documentation:
+    // A DiffableMatcher is a representation of a class of values.
+    // It is used to represent the valid or expected arguments to a mocked method.
+    // The only difference is the Value() function to allow for full matching
+    type DiffableMatcher interface {
+    	// Matches returns whether x is a match.
+    	Matches(x interface{}) bool
+    
+    	// String describes what the matcher matches.
+    	String() string
+    
+    	// Value returns the original value, for use in Diff output
+    	Value() interface{}
+    }
 
 ```bash
-go doc github.com/golang/mock/gomock
+go doc github.com/fishybell/mock/gomock
 ```
 
 Alternatively, there is an online reference for the package hosted on GoPkgDoc
@@ -238,8 +253,8 @@ If the received value is `3`, then it will be printed as `03`.
 
 [golang]:          http://golang.org/
 [golang-install]:  http://golang.org/doc/install.html#releases
-[gomock-ref]:      http://godoc.org/github.com/golang/mock/gomock
-[travis-ci-badge]: https://travis-ci.org/golang/mock.svg?branch=master
-[travis-ci]:       https://travis-ci.org/golang/mock
-[godoc-badge]:     https://godoc.org/github.com/golang/mock/gomock?status.svg
-[godoc]:           https://godoc.org/github.com/golang/mock/gomock
+[gomock-ref]:      http://godoc.org/github.com/fishybell/mock/gomock
+[travis-ci-badge]: https://travis-ci.org/fishybell/mock.svg?branch=master
+[travis-ci]:       https://travis-ci.org/fishybell/mock
+[godoc-badge]:     https://godoc.org/github.com/fishybell/mock/gomock?status.svg
+[godoc]:           https://godoc.org/github.com/fishybell/mock/gomock
