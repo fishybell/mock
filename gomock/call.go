@@ -383,8 +383,10 @@ func (c *Call) matches(args []interface{}) error {
 			// Got Foo(a, b, c, d) want Foo(matcherA, matcherB, matcherC, matcherD, matcherE)
 			// Got Foo(a, b, c, d, e) want Foo(matcherA, matcherB, matcherC, matcherD)
 			// Got Foo(a, b, c) want Foo(matcherA, matcherB)
-			return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
-				c.origin, strconv.Itoa(i), diff(args[i], m))
+			//return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+			//	c.origin, strconv.Itoa(i), diff(args[i], m))
+			return fmt.Errorf("expected call at %s doesn't match the argument at index %s.\nGot: %v\nWant: %v",
+				c.origin, strconv.Itoa(i), formatGottenArg(m, args[i:]), c.args[i])
 		}
 	}
 
@@ -453,6 +455,11 @@ var spewConfig = spew.ConfigState{
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it tries its best to return something useful
 func diff(actualOrig interface{}, matcher Matcher) string {
+	// first, use the Got func if we have one
+	if gs, ok := matcher.(GotFormatter); ok {
+		return fmt.Sprintf("Got: %s\nWant: %s", gs.Got(actualOrig), matcher.String())
+	}
+
 	var actual interface{}
 	var expected interface{}
 	if diffable, ok := matcher.(DiffableMatcher); ok {

@@ -33,7 +33,7 @@ import (
 	"strings"
 
 	"github.com/fishybell/mock/mockgen/model"
-	"golang.org/x/tools/go/packages"
+	"golang.org/x/mod/modfile"
 )
 
 var (

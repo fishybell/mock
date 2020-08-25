@@ -77,7 +77,7 @@ func TestOrderedCallsInCorrect(t *testing.T) {
 			ctrl.Call(subjectOne, "FooMethod", "1")
 			// FooMethod(2) should be called before BarMethod(3)
 			ctrl.Call(subjectTwo, "BarMethod", "3")
-		}, "Unexpected call to", "Subject.BarMethod([3])", "doesn't have a prerequisite call satisfied")
+		}, "Unexpected call to", "Subject.BarMethod(arg0: is equal to 3)", "doesn't have a prerequisite call satisfied")
 	})
 	ctrl = gomock.NewController(reporter)
 }

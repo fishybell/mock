@@ -5,6 +5,8 @@
 package mock_vendor_dep
 
 import (
+	reflect "reflect"
+
 	gomock "github.com/fishybell/mock/gomock"
 	present "golang.org/x/tools/present"
 )
