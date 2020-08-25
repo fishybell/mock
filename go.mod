@@ -1,4 +1,4 @@
-module github.com/golang/mock
+module github.com/fishybell/mock
 
 require (
 	github.com/davecgh/go-spew v1.1.1

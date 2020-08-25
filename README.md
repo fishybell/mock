@@ -16,7 +16,7 @@ Install and gomock/mockgen as normal, then:
 
     mkdir vendor
     git clone git@github.com:fishybell/mock vendor/mock
-    echo "replace github.com/golang/mock => ./vendor/mock" >> go.mod
+    echo "replace github.com/fishybell/mock => ./vendor/mock" >> go.mod
 
 This is necessary as the mock package uses types rather than interfaces.
 

@@ -36,11 +36,11 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/golang/mock/mockgen/model"
+	"github.com/fishybell/mock/mockgen/model"
 )
 
 const (
-	gomockImportPath = "github.com/golang/mock/gomock"
+	gomockImportPath = "github.com/fishybell/mock/gomock"
 )
 
 var (
@@ -176,6 +176,8 @@ by passing two non-flag arguments: an import path, and a
 comma-separated list of symbols.
 Example:
 	mockgen database/sql/driver Conn,Driver
+
+Note: while syntatically identical, fishybell/mock is not compatible with golang/mock
 
 `
 
