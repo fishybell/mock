@@ -59,6 +59,7 @@ import (
 	"runtime"
 	"strings"
 	"sync"
+	"testing"
 )
 
 // A TestReporter is something that can be used to report test failures.  It
@@ -300,6 +301,13 @@ func (ctrl *Controller) Finish() {
 	}
 
 	// Check that all remaining expected calls are satisfied.
+	if test, ok := ctrl.T.(*testing.T); ok {
+		if test.Failed() {
+			// don't report missing calls, as those might be due to a previous Fatal call here
+			ctrl.T.Fatalf("aborting test due to incorrect call(s)")
+			return
+		}
+	}
 	failures := ctrl.expectedCalls.Failures()
 	for _, call := range failures {
 		ctrl.T.Errorf("missing call(s) to %v\n", call)

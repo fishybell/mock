@@ -69,10 +69,15 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	// Search through the expected calls.
 	expected := cs.expected[key]
 	var callsErrors bytes.Buffer
+	var firstErr error
 	for _, call := range expected {
 		err := call.matches(args)
 		if err != nil {
-			_, _ = fmt.Fprintf(&callsErrors, "\n%v", err)
+			// only display of the first mismatch so as not to spam
+			if firstErr == nil {
+				_, _ = fmt.Fprintf(&callsErrors, "\n%v", err)
+				firstErr = err
+			}
 		} else {
 			return call, nil
 		}
@@ -81,15 +86,16 @@ func (cs callSet) FindMatch(receiver interface{}, method string, args []interfac
 	// If we haven't found a match then search through the exhausted calls so we
 	// get useful error messages.
 	exhausted := cs.exhausted[key]
-	for _, call := range exhausted {
-		if err := call.matches(args); err != nil {
-			_, _ = fmt.Fprintf(&callsErrors, "\n%v", err)
-			continue
-		}
-		_, _ = fmt.Fprintf(
-			&callsErrors, "all expected calls for method %q have been exhausted", method,
-		)
-	}
+	// this is just spam output, it's not useful under, as far as I can tell, all circumstances
+	//for _, call := range exhausted {
+	//	if err := call.matches(args); err != nil {
+	//		_, _ = fmt.Fprintf(&callsErrors, "\n%v", err)
+	//		continue
+	//	}
+	//	_, _ = fmt.Fprintf(
+	//		&callsErrors, "all expected calls for method %q have been exhausted", method,
+	//	)
+	//}
 
 	if len(expected)+len(exhausted) == 0 {
 		_, _ = fmt.Fprintf(&callsErrors, "there are no expected calls of the method %q for that receiver", method)

@@ -315,11 +315,20 @@ func (c *Call) matches(args []interface{}) error {
 				c.origin, len(args), len(c.args))
 		}
 
+		var argMatchError error
 		for i, m := range c.args {
 			if !m.Matches(args[i]) {
-				return fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
-					c.origin, strconv.Itoa(i), diff(args[i], m))
+				if argMatchError == nil {
+					argMatchError = fmt.Errorf("Expected call at %s doesn't match the argument at index %s.\n%s",
+						c.origin, strconv.Itoa(i), diff(args[i], m))
+				} else {
+					argMatchError = fmt.Errorf("%sExpected call at %s doesn't match the argument at index %s.\n%s",
+						argMatchError, c.origin, strconv.Itoa(i), diff(args[i], m))
+				}
 			}
+		}
+		if argMatchError != nil {
+			return argMatchError
 		}
 	} else {
 		if len(c.args) < c.methodType.NumIn()-1 {
